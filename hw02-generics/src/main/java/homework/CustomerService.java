@@ -13,11 +13,7 @@ public class CustomerService {
         Map.Entry<Customer, String> smallest = customers.entrySet().stream()
                 .min(Comparator.comparingLong(x -> x.getKey().getScores()))
                 .orElse(null);
-
-        if (smallest != null)
-            return Map.entry(smallest.getKey().clone(), smallest.getValue());
-        else
-            return null;
+        return getCopyOrNull(smallest);
     }
 
     public Map.Entry<Customer, String> getNext(Customer customer) {
@@ -25,14 +21,17 @@ public class CustomerService {
                 .filter(it -> it.getKey().getScores() > customer.getScores())
                 .findFirst()
                 .orElse(null);
-
-        if (next != null)
-            return Map.entry(next.getKey().clone(), next.getValue());
-        else
-            return null;
+        return getCopyOrNull(next);
     }
 
     public void add(Customer customer, String data) {
         customers.put(customer, data);
+    }
+
+    private Map.Entry<Customer, String> getCopyOrNull(Map.Entry<Customer, String> entry) {
+        if (entry != null)
+            return Map.entry(entry.getKey().clone(), entry.getValue());
+        else
+            return null;
     }
 }
