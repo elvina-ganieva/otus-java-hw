@@ -1,0 +1,21 @@
+До:
+-Xms256m -Xmx256m -XX:+UseSerialGC
+OutOfMemoryError
+
+-Xms2g -Xmx2g -XX:+UseSerialGC
+spend msec:10505, sec:10
+
+Оптимальный размер кучи:
+-Xms1696m -Xmx1696m -XX:+UseSerialGC
+spend msec:9303, sec:9
+
+После:
+-Xms256m -Xmx256m -XX:+UseSerialGC
+spend msec:2045, sec:2
+
+-Xms2g -Xmx2g -XX:+UseSerialGC
+spend msec:2176, sec:2
+
+Оптимальный размер кучи:
+-Xms1g -Xmx1g -XX:+UseSerialGC
+spend msec:1981, sec:1
