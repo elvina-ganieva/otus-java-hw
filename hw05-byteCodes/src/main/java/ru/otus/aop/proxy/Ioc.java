@@ -3,9 +3,7 @@ package ru.otus.aop.proxy;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 class Ioc {
@@ -22,11 +20,13 @@ class Ioc {
     static class CustomInvocationHandler implements InvocationHandler {
         private final TestLoggingInterface loggingInterface;
 
-        private final List<Method> methods = new ArrayList<>();
+        private final Set<Method> methods = new HashSet<>();
 
         CustomInvocationHandler(TestLoggingInterface loggingInterface) {
             this.loggingInterface = loggingInterface;
-            this.methods.addAll(Arrays.stream(loggingInterface.getClass().getMethods()).toList());
+            this.methods.addAll(Arrays.stream(loggingInterface.getClass().getMethods())
+                    .filter(element -> element.isAnnotationPresent(Log.class))
+                    .collect(Collectors.toSet()));
         }
 
         @Override
@@ -36,7 +36,7 @@ class Ioc {
                             element.getName().equals(method.getName()) &&
                                     Arrays.equals(element.getParameterTypes(), method.getParameterTypes())
                     ).findFirst();
-            if (classMethod.isPresent() && classMethod.get().isAnnotationPresent(Log.class)) {
+            if (classMethod.isPresent()) {
                 var params = Arrays.stream(args)
                         .map(Object::toString)
                         .collect(Collectors.joining(", "));
