@@ -1,4 +1,4 @@
-package ru.otus;
+package ru.otus.exception;
 
 public class BillGiverException extends RuntimeException {
 

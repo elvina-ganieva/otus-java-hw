@@ -1,10 +1,14 @@
-package ru.otus;
+package ru.otus.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import ru.otus.exception.BillGiverException;
+import ru.otus.model.Denomination;
+import ru.otus.repository.AtmRepository;
+import ru.otus.repository.SimpleAtmRepository;
 
+import java.util.HashMap;
 import java.util.Map;
-import java.util.TreeMap;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
@@ -13,21 +17,24 @@ class BillGiverTest {
 
     private BillGiver billGiver;
 
-    private Map<Denomination, Integer> denominationsCount;
+    private AtmRepository atmRepository;
 
     @BeforeEach
     void setUp() {
-        denominationsCount = new TreeMap<>((o1, o2) -> o2.getValue() - o1.getValue());
-        denominationsCount.put(Denomination.FIVE_THOUSAND, 0);
-        denominationsCount.put(Denomination.ONE_THOUSAND, 1);
-        denominationsCount.put(Denomination.FIVE_HUNDRED, 3);
-        denominationsCount.put(Denomination.ONE_HUNDRED, 0);
+        var map = new HashMap<Denomination, Integer>();
+        map.put(Denomination.FIVE_THOUSAND, 0);
+        map.put(Denomination.ONE_THOUSAND, 1);
+        map.put(Denomination.FIVE_HUNDRED, 3);
+        map.put(Denomination.ONE_HUNDRED, 0);
+
+        atmRepository = new SimpleAtmRepository();
+        atmRepository.addBills(map);
     }
 
     @Test
-    void giveBillsShouldReturnOneThousandBanknote() {
+    void giveBillsShouldReturnOneOneThousandBill() {
         // given
-        billGiver = new BillGiver(denominationsCount, 1000);
+        billGiver = new BillGiver(atmRepository, 1000);
 
         // when
         Map<Denomination, Integer> result = billGiver.giveBills();
@@ -37,9 +44,9 @@ class BillGiverTest {
     }
 
     @Test
-    void giveBillsShouldReturnOneThousandBanknoteAndOneFiveHundredBanknote() {
+    void giveBillsShouldReturnOneOneThousandAndOneFiveHundredBill() {
         // given
-        billGiver = new BillGiver(denominationsCount, 1500);
+        billGiver = new BillGiver(atmRepository, 1500);
 
         // when
         Map<Denomination, Integer> result = billGiver.giveBills();
@@ -50,9 +57,9 @@ class BillGiverTest {
     }
 
     @Test
-    void giveBillsShouldThrowExceptionWhenThereIsNotEnoughBanknotes() {
+    void giveBillsShouldThrowExceptionWhenThereIsNotEnoughBillsInAtm() {
         // given
-        billGiver = new BillGiver(denominationsCount, 5000);
+        billGiver = new BillGiver(atmRepository, 5000);
 
         // then
         assertThatThrownBy(() -> billGiver.giveBills()).isInstanceOf(BillGiverException.class);
