@@ -2,6 +2,8 @@ package ru.otus.model;
 
 import ru.otus.listener.homework.Copyable;
 
+import java.util.List;
+
 
 public class Message implements Copyable<Message> {
     private final long id;
@@ -133,7 +135,13 @@ public class Message implements Copyable<Message> {
 
     @Override
     public Message copy() {
-        return new Message.Builder(id)
+        ObjectForMessage obj = null;
+        if (field13 != null) {
+            obj = new ObjectForMessage();
+            obj.setData(List.copyOf(field13.getData()));
+        }
+
+        var copy = new Builder(id)
                 .field1(field1)
                 .field2(field2)
                 .field3(field3)
@@ -146,8 +154,9 @@ public class Message implements Copyable<Message> {
                 .field10(field10)
                 .field11(field11)
                 .field12(field12)
-                .field13(field13)
+                .field13(obj)
                 .build();
+        return copy;
     }
 
     public static class Builder {
