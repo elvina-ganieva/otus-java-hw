@@ -13,7 +13,7 @@ import static org.mockito.Mockito.*;
 class ProcessorThrowExceptionTest {
 
     @Test
-    @DisplayName("Процессор выбрасывает исключение в четную секунду ")
+    @DisplayName("Процессор выбрасывает исключение в четную секунду")
     void handleProcessorTest1() {
         // given
         var dateTimeProvider = mock(DateTimeProvider.class);
@@ -29,7 +29,7 @@ class ProcessorThrowExceptionTest {
     }
 
     @Test
-    @DisplayName("Процессор не выбрасывает исключение в нечетную секунду ")
+    @DisplayName("Процессор не выбрасывает исключение в нечетную секунду")
     void handleProcessorTest2() {
         // given
         var dateTimeProvider = mock(DateTimeProvider.class);
