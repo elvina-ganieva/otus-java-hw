@@ -14,5 +14,4 @@ public class ProcessorSwapFields implements Processor {
                 .build();
     }
 }
-
-//todo: 2. Сделать процессор, который поменяет местами значения field11 и field12
+//todo: 2. РЎРґРµР»Р°С‚СЊ РїСЂРѕС†РµСЃСЃРѕСЂ, РєРѕС‚РѕСЂС‹Р№ РїРѕРјРµРЅСЏРµС‚ РјРµСЃС‚Р°РјРё Р·РЅР°С‡РµРЅРёСЏ field11 Рё field12
