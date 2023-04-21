@@ -29,7 +29,7 @@ class ProcessorThrowExceptionTest {
     }
 
     @Test
-    @DisplayName("Процессор не выбрасывает исключение в нечетную секунду")
+    @DisplayName("Процессор не выбрасывает исключение в нечетную секундуb")
     void handleProcessorTest2() {
         // given
         var dateTimeProvider = mock(DateTimeProvider.class);
