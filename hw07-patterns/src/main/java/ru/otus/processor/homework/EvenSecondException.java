@@ -5,4 +5,5 @@ public class EvenSecondException extends RuntimeException {
     public EvenSecondException() {
         super("Четная секунда.");
     }
+
 }

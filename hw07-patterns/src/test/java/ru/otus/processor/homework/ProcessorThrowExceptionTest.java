@@ -43,4 +43,5 @@ class ProcessorThrowExceptionTest {
         // then
         verify(dateTimeProvider, times(1)).getTime();
     }
+
 }
