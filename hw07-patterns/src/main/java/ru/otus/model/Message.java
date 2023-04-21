@@ -21,6 +21,7 @@ public class Message implements Copyable<Message> {
 
     //todo: 1. Добавить поля field11 - field13 (для field13 используйте класс ObjectForMessage)
 
+
     private Message(long id, String field1, String field2, String field3, String field4, String field5, String field6, String field7, String field8, String field9, String field10, String field11, String field12, ObjectForMessage field13) {
         this.id = id;
         this.field1 = field1;

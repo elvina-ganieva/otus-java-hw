@@ -29,6 +29,7 @@ public class HomeWork {
           Для него уже есть тест, убедитесь, что тест проходит
      */
 
+
     public static void main(String[] args) {
         var processors = List.of(
                 new ProcessorConcatFields(),
