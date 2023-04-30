@@ -21,11 +21,7 @@ public class EntityClassMetaDataImpl<T> implements EntityClassMetaData<T> {
     private final List<Field> fieldsWithoutId;
 
     public EntityClassMetaDataImpl(Class<T> clazz) {
-        try {
-            this.constructor = clazz.getConstructor();
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException(String.format("Конструктор класса %s не найден.", clazz.getName()), e);
-        }
+
 
         this.className = clazz.getName()
                 .substring(clazz.getName().lastIndexOf(".") + 1)
@@ -42,6 +38,13 @@ public class EntityClassMetaDataImpl<T> implements EntityClassMetaData<T> {
         this.fieldsWithoutId = Arrays.stream(clazz.getDeclaredFields())
                 .filter(el -> !el.isAnnotationPresent(Id.class))
                 .collect(Collectors.toList());
+
+        var classes = allFields.stream().map(Field::getType).toArray(Class[]::new);
+        try {
+            this.constructor = clazz.getConstructor(classes);
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException(String.format("Конструктор класса %s не найден.", clazz.getName()), e);
+        }
     }
 
     @Override
