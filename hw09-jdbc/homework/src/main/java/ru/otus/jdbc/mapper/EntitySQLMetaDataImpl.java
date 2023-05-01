@@ -54,6 +54,7 @@ public class EntitySQLMetaDataImpl<T> implements EntitySQLMetaData {
     @Override
     public String getUpdateSql() {
         var numberOfFieldsWithoutId = entityClassMetaData.getFieldsWithoutId().size();
+
         var query = new StringBuilder();
         query.append("update ")
                 .append(entityClassMetaData.getName())

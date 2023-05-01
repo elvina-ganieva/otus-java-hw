@@ -3,7 +3,6 @@ package ru.otus.jdbc.mapper;
 import ru.otus.core.repository.DataTemplate;
 import ru.otus.core.repository.DataTemplateException;
 import ru.otus.core.repository.executor.DbExecutor;
-import ru.otus.crm.model.Id;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -21,16 +20,12 @@ public class DataTemplateJdbc<T> implements DataTemplate<T> {
 
     private final DbExecutor dbExecutor;
     private final EntitySQLMetaData entitySQLMetaData;
-
     private final EntityClassMetaData<T> entityClassMetaData;
 
-    private final Class<T> clazz;
-
-    public DataTemplateJdbc(DbExecutor dbExecutor, EntitySQLMetaData entitySQLMetaData, EntityClassMetaData<T> entityClassMetaData, Class<T> clazz) {
+    public DataTemplateJdbc(DbExecutor dbExecutor, EntitySQLMetaData entitySQLMetaData, EntityClassMetaData<T> entityClassMetaData) {
         this.dbExecutor = dbExecutor;
         this.entitySQLMetaData = entitySQLMetaData;
         this.entityClassMetaData = entityClassMetaData;
-        this.clazz = clazz;
     }
 
     @Override
@@ -65,32 +60,11 @@ public class DataTemplateJdbc<T> implements DataTemplate<T> {
 
     @Override
     public long insert(Connection connection, T client) {
-        var getters = Arrays.stream(client.getClass().getDeclaredMethods())
-                .filter(el -> el.getName().startsWith("get"))
-                .toList();
-
-        List<Object> params = new ArrayList<>();
-        for (Method method : getters) {
-            Object result;
-            try {
-                result = method.invoke(client);
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                throw new RuntimeException(e);
-            }
-            try {
-                if (!clazz.getDeclaredField(method.getName().substring(3).toLowerCase())
-                        .isAnnotationPresent(Id.class)) {
-                    params.add(result);
-                }
-            } catch (NoSuchFieldException e) {
-                throw new RuntimeException(e);
-            }
-        }
         try {
             return dbExecutor.executeStatement(
                     connection,
                     entitySQLMetaData.getInsertSql(),
-                    params);
+                    getParamsForInsert(client));
         } catch (Exception e) {
             throw new DataTemplateException(e);
         }
@@ -99,5 +73,23 @@ public class DataTemplateJdbc<T> implements DataTemplate<T> {
     @Override
     public void update(Connection connection, T client) {
         throw new UnsupportedOperationException();
+    }
+
+    private List<Object> getParamsForInsert(T client) {
+        List<Object> params = new ArrayList<>();
+
+        var getters = Arrays.stream(client.getClass().getDeclaredMethods())
+                .filter(method -> method.getName().startsWith("get"))
+                .toList();
+
+        for (Method method : getters) {
+            try {
+                if (!method.getName().substring(3).equalsIgnoreCase(entityClassMetaData.getIdField().getName()))
+                    params.add(method.invoke(client));
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return params;
     }
 }
