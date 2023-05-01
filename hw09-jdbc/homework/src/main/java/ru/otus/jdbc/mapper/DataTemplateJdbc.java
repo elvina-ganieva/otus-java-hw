@@ -7,11 +7,9 @@ import ru.otus.core.repository.executor.DbExecutor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Сохратяет объект в базу, читает объект из базы
@@ -37,17 +35,10 @@ public class DataTemplateJdbc<T> implements DataTemplate<T> {
                 rs -> {
                     try {
                         if (rs.next()) {
-                            List<Object> params = new ArrayList<>();
-                            var objectCount = rs.getMetaData().getColumnCount();
-                            for (int i = 0; i < objectCount; i++) {
-                                var obj = rs.getObject(i + 1);
-                                params.add(obj);
-                            }
-                            return entityClassMetaData.getConstructor().newInstance(params.toArray());
+                            return getClassInstance(rs);
                         }
-                    } catch (SQLException | InvocationTargetException | InstantiationException |
-                             IllegalAccessException e) {
-                        throw new RuntimeException(e);
+                    } catch (SQLException e) {
+                        throw new DataTemplateException(e);
                     }
                     return null;
                 });
@@ -55,7 +46,21 @@ public class DataTemplateJdbc<T> implements DataTemplate<T> {
 
     @Override
     public List<T> findAll(Connection connection) {
-        throw new UnsupportedOperationException();
+        return dbExecutor.executeSelect(
+                connection,
+                entitySQLMetaData.getSelectAllSql(),
+                Collections.emptyList(),
+                rs -> {
+                    var entityList = new ArrayList<T>();
+                    try {
+                        while (rs.next()) {
+                            entityList.add(getClassInstance(rs));
+                        }
+                        return entityList;
+                    } catch (SQLException e) {
+                        throw new DataTemplateException(e);
+                    }
+                }).orElseThrow(() -> new RuntimeException("Unexpected error"));
     }
 
     @Override
@@ -64,7 +69,7 @@ public class DataTemplateJdbc<T> implements DataTemplate<T> {
             return dbExecutor.executeStatement(
                     connection,
                     entitySQLMetaData.getInsertSql(),
-                    getParamsForInsert(client));
+                    getQueryParams(client));
         } catch (Exception e) {
             throw new DataTemplateException(e);
         }
@@ -72,10 +77,19 @@ public class DataTemplateJdbc<T> implements DataTemplate<T> {
 
     @Override
     public void update(Connection connection, T client) {
-        throw new UnsupportedOperationException();
+        List<Object> params = getQueryParams(client);
+        params.add(getIdValue(client));
+        try {
+            dbExecutor.executeStatement(
+                    connection,
+                    entitySQLMetaData.getUpdateSql(),
+                    params);
+        } catch (Exception e) {
+            throw new DataTemplateException(e);
+        }
     }
 
-    private List<Object> getParamsForInsert(T client) {
+    private List<Object> getQueryParams(T client) {
         List<Object> params = new ArrayList<>();
 
         var getters = Arrays.stream(client.getClass().getDeclaredMethods())
@@ -87,9 +101,42 @@ public class DataTemplateJdbc<T> implements DataTemplate<T> {
                 if (!method.getName().substring(3).equalsIgnoreCase(entityClassMetaData.getIdField().getName()))
                     params.add(method.invoke(client));
             } catch (IllegalAccessException | InvocationTargetException e) {
-                throw new RuntimeException(e);
+                throw new DataTemplateException(e);
             }
         }
         return params;
+    }
+
+    private Object getIdValue(T client) {
+        var idFieldName = entityClassMetaData.getIdField().getName();
+
+        var getters = Arrays.stream(client.getClass().getDeclaredMethods())
+                .filter(method -> method.getName().startsWith("get"))
+                .toList();
+
+        var getIdMethod = getters.stream()
+                .filter(method -> method.getName().substring(3).equalsIgnoreCase(idFieldName))
+                .findFirst()
+                .orElseThrow();
+
+        try {
+            return getIdMethod.invoke(client);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new DataTemplateException(e);
+        }
+    }
+
+    private T getClassInstance(ResultSet rs) {
+        List<Object> params = new ArrayList<>();
+
+        try {
+            for (int i = 0; i < rs.getMetaData().getColumnCount(); i++) {
+                var object = rs.getObject(i + 1);
+                params.add(object);
+            }
+            return entityClassMetaData.getConstructor().newInstance(params.toArray());
+        } catch (SQLException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

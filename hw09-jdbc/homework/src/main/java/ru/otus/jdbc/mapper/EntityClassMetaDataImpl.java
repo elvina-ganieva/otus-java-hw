@@ -21,14 +21,12 @@ public class EntityClassMetaDataImpl<T> implements EntityClassMetaData<T> {
     private final List<Field> fieldsWithoutId;
 
     public EntityClassMetaDataImpl(Class<T> clazz) {
-
-
         this.className = clazz.getName()
                 .substring(clazz.getName().lastIndexOf(".") + 1)
                 .toLowerCase();
 
         this.idField = Arrays.stream(clazz.getDeclaredFields())
-                .filter(el -> el.isAnnotationPresent(Id.class))
+                .filter(field -> field.isAnnotationPresent(Id.class))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Поле %s с аннотацией Id не найдено."));
 
@@ -36,12 +34,11 @@ public class EntityClassMetaDataImpl<T> implements EntityClassMetaData<T> {
                 .collect(Collectors.toList());
 
         this.fieldsWithoutId = Arrays.stream(clazz.getDeclaredFields())
-                .filter(el -> !el.isAnnotationPresent(Id.class))
+                .filter(field -> !field.isAnnotationPresent(Id.class))
                 .collect(Collectors.toList());
 
-        var classes = allFields.stream().map(Field::getType).toArray(Class[]::new);
         try {
-            this.constructor = clazz.getConstructor(classes);
+            this.constructor = clazz.getConstructor(allFields.stream().map(Field::getType).toArray(Class[]::new));
         } catch (NoSuchMethodException e) {
             throw new RuntimeException(String.format("Конструктор класса %s не найден.", clazz.getName()), e);
         }
