@@ -7,13 +7,20 @@ public class EntitySQLMetaDataImpl<T> implements EntitySQLMetaData {
 
     private final EntityClassMetaData<T> entityClassMetaData;
 
+    private final String selectAllSql;
+
     public EntitySQLMetaDataImpl(EntityClassMetaData<T> entityClassMetaData) {
         this.entityClassMetaData = entityClassMetaData;
+
+        var commaSeparatedFields = entityClassMetaData.getAllFields().stream()
+                .map(Field::getName)
+                .collect(Collectors.joining(", "));
+        this.selectAllSql = "select " + commaSeparatedFields + " from " + entityClassMetaData.getName() + ";";
     }
 
     @Override
     public String getSelectAllSql() {
-        return "select * from " + entityClassMetaData.getName() + ";";
+        return selectAllSql;
     }
 
     @Override

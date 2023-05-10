@@ -60,7 +60,7 @@ public class DataTemplateJdbc<T> implements DataTemplate<T> {
                     } catch (SQLException e) {
                         throw new DataTemplateException(e);
                     }
-                }).orElseThrow(() -> new RuntimeException("Unexpected error"));
+                }).orElseThrow(DataTemplateException::new);
     }
 
     @Override
@@ -93,13 +93,14 @@ public class DataTemplateJdbc<T> implements DataTemplate<T> {
         List<Object> params = new ArrayList<>();
 
         var getters = Arrays.stream(client.getClass().getDeclaredMethods())
-                .filter(method -> method.getName().startsWith("get"))
+                .filter(method -> method.getName().startsWith("get") || method.getName().startsWith("is"))
                 .toList();
 
         for (Method method : getters) {
             try {
-                if (!method.getName().substring(3).equalsIgnoreCase(entityClassMetaData.getIdField().getName()))
+                if (!method.getName().substring(3).equalsIgnoreCase(entityClassMetaData.getIdField().getName())) {
                     params.add(method.invoke(client));
+                }
             } catch (IllegalAccessException | InvocationTargetException e) {
                 throw new DataTemplateException(e);
             }
