@@ -30,7 +30,7 @@ public class HomeWork {
 
 // Работа с клиентом
         var entityClassMetaDataClient = new EntityClassMetaDataImpl<>(Client.class);
-        var entitySQLMetaDataClient = new EntitySQLMetaDataImpl<>(entityClassMetaDataClient);
+        var entitySQLMetaDataClient = new EntitySQLMetaDataImpl(entityClassMetaDataClient);
         var dataTemplateClient = new DataTemplateJdbc<>(dbExecutor, entitySQLMetaDataClient, entityClassMetaDataClient); //реализация DataTemplate, универсальная
 
 // Код дальше должен остаться
@@ -45,7 +45,7 @@ public class HomeWork {
 // Сделайте тоже самое с классом Manager (для него надо сделать свою таблицу)
 
         var entityClassMetaDataManager = new EntityClassMetaDataImpl<>(Manager.class);
-        var entitySQLMetaDataManager = new EntitySQLMetaDataImpl<>(entityClassMetaDataManager);
+        var entitySQLMetaDataManager = new EntitySQLMetaDataImpl(entityClassMetaDataManager);
         var dataTemplateManager = new DataTemplateJdbc<>(dbExecutor, entitySQLMetaDataManager, entityClassMetaDataManager);
 
         var dbServiceManager = new DbServiceManagerImpl(transactionRunner, dataTemplateManager);

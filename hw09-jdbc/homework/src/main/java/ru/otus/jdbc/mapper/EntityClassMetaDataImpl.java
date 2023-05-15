@@ -38,7 +38,7 @@ public class EntityClassMetaDataImpl<T> implements EntityClassMetaData<T> {
                 .collect(Collectors.toList());
 
         try {
-            this.constructor = clazz.getConstructor(allFields.stream().map(Field::getType).toArray(Class[]::new));
+            this.constructor = clazz.getConstructor();
         } catch (NoSuchMethodException e) {
             throw new RuntimeException(String.format("Конструктор класса %s не найден.", clazz.getName()), e);
         }

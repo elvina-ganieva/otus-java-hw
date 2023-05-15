@@ -4,8 +4,8 @@ import ru.otus.core.repository.DataTemplate;
 import ru.otus.core.repository.DataTemplateException;
 import ru.otus.core.repository.executor.DbExecutor;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -92,16 +92,11 @@ public class DataTemplateJdbc<T> implements DataTemplate<T> {
     private List<Object> getQueryParams(T client) {
         List<Object> params = new ArrayList<>();
 
-        var getters = Arrays.stream(client.getClass().getDeclaredMethods())
-                .filter(method -> method.getName().startsWith("get") || method.getName().startsWith("is"))
-                .toList();
-
-        for (Method method : getters) {
+        for (Field field : entityClassMetaData.getFieldsWithoutId()) {
+            field.setAccessible(true);
             try {
-                if (!method.getName().substring(3).equalsIgnoreCase(entityClassMetaData.getIdField().getName())) {
-                    params.add(method.invoke(client));
-                }
-            } catch (IllegalAccessException | InvocationTargetException e) {
+                params.add(field.get(client));
+            } catch (IllegalAccessException e) {
                 throw new DataTemplateException(e);
             }
         }
@@ -109,33 +104,32 @@ public class DataTemplateJdbc<T> implements DataTemplate<T> {
     }
 
     private Object getIdValue(T client) {
-        var idFieldName = entityClassMetaData.getIdField().getName();
-
-        var getters = Arrays.stream(client.getClass().getDeclaredMethods())
-                .filter(method -> method.getName().startsWith("get"))
-                .toList();
-
-        var getIdMethod = getters.stream()
-                .filter(method -> method.getName().substring(3).equalsIgnoreCase(idFieldName))
-                .findFirst()
-                .orElseThrow();
-
+        var idField = entityClassMetaData.getIdField();
+        idField.setAccessible(true);
         try {
-            return getIdMethod.invoke(client);
-        } catch (IllegalAccessException | InvocationTargetException e) {
+            return idField.get(client);
+        } catch (IllegalAccessException e) {
             throw new DataTemplateException(e);
         }
     }
 
     private T getClassInstance(ResultSet rs) {
-        List<Object> params = new ArrayList<>();
-
         try {
+            var classInstance = entityClassMetaData.getConstructor().newInstance();
+            var fields = entityClassMetaData.getAllFields();
+
             for (int i = 0; i < rs.getMetaData().getColumnCount(); i++) {
-                var object = rs.getObject(i + 1);
-                params.add(object);
+                var value = rs.getObject(i + 1);
+                var columnName = rs.getMetaData().getColumnName(i + 1);
+                var field = fields.stream()
+                        .filter(it -> it.getName().equalsIgnoreCase(columnName))
+                        .findFirst();
+                if (field.isPresent()) {
+                    field.get().setAccessible(true);
+                    field.get().set(classInstance, value);
+                }
             }
-            return entityClassMetaData.getConstructor().newInstance(params.toArray());
+            return classInstance;
         } catch (SQLException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
