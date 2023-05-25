@@ -64,21 +64,21 @@ public class DataTemplateJdbc<T> implements DataTemplate<T> {
     }
 
     @Override
-    public long insert(Connection connection, T client) {
+    public long insert(Connection connection, T object) {
         try {
             return dbExecutor.executeStatement(
                     connection,
                     entitySQLMetaData.getInsertSql(),
-                    getQueryParams(client));
+                    getQueryParams(object));
         } catch (Exception e) {
             throw new DataTemplateException(e);
         }
     }
 
     @Override
-    public void update(Connection connection, T client) {
-        List<Object> params = getQueryParams(client);
-        params.add(getIdValue(client));
+    public void update(Connection connection, T object) {
+        List<Object> params = getQueryParams(object);
+        params.add(getIdValue(object));
         try {
             dbExecutor.executeStatement(
                     connection,
@@ -89,13 +89,13 @@ public class DataTemplateJdbc<T> implements DataTemplate<T> {
         }
     }
 
-    private List<Object> getQueryParams(T client) {
+    private List<Object> getQueryParams(T object) {
         List<Object> params = new ArrayList<>();
 
         for (Field field : entityClassMetaData.getFieldsWithoutId()) {
             field.setAccessible(true);
             try {
-                params.add(field.get(client));
+                params.add(field.get(object));
             } catch (IllegalAccessException e) {
                 throw new DataTemplateException(e);
             }
@@ -103,11 +103,11 @@ public class DataTemplateJdbc<T> implements DataTemplate<T> {
         return params;
     }
 
-    private Object getIdValue(T client) {
+    private Object getIdValue(T object) {
         var idField = entityClassMetaData.getIdField();
         idField.setAccessible(true);
         try {
-            return idField.get(client);
+            return idField.get(object);
         } catch (IllegalAccessException e) {
             throw new DataTemplateException(e);
         }
@@ -118,16 +118,11 @@ public class DataTemplateJdbc<T> implements DataTemplate<T> {
             var classInstance = entityClassMetaData.getConstructor().newInstance();
             var fields = entityClassMetaData.getAllFields();
 
-            for (int i = 0; i < rs.getMetaData().getColumnCount(); i++) {
-                var value = rs.getObject(i + 1);
-                var columnName = rs.getMetaData().getColumnName(i + 1);
-                var field = fields.stream()
-                        .filter(it -> it.getName().equalsIgnoreCase(columnName))
-                        .findFirst();
-                if (field.isPresent()) {
-                    field.get().setAccessible(true);
-                    field.get().set(classInstance, value);
-                }
+            for (Field field : fields) {
+                var fieldName = field.getName();
+                var object = rs.getObject(fieldName);
+                field.setAccessible(true);
+                field.set(classInstance, object);
             }
             return classInstance;
         } catch (SQLException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
